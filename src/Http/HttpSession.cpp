@@ -44,6 +44,7 @@ int64_t HttpSession::onRecvHeader(const char *header,uint64_t len) {
         s_func_map.emplace("GET",&HttpSession::Handle_Req_GET);
         s_func_map.emplace("POST",&HttpSession::Handle_Req_POST);
         s_func_map.emplace("HEAD",&HttpSession::Handle_Req_HEAD);
+		s_func_map.emplace("OPTION",&HttpSession::Handle_Req_HEAD);
     }, nullptr);
 
     _parser.Parse(header);
