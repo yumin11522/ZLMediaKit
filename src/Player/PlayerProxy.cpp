@@ -95,6 +95,9 @@ void PlayerProxy::play(const string &strUrlTmp) {
         }
 
         //注销直接拉流代理产生的流：#532
+		if (strongSelf->_pMediaSrc) {
+            strongSelf->_pMediaSrc->close(true);
+        }
         strongSelf->setMediaSource(nullptr);
 
         if(strongSelf->_muxer) {
