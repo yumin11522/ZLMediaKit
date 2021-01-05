@@ -113,7 +113,7 @@ bool RtpReceiver::handleOneRtp(int track_index, TrackType type, int samplerate, 
     }
 
     if (rtp_raw_len <= rtp.offset) {
-        WarnL << "无有效负载的rtp包:" << rtp_raw_len << " <= " << (int) rtp.offset;
+        //无有效负载的rtp包
         return false;
     }
 
@@ -152,13 +152,16 @@ void RtpReceiver::setPoolSize(int size) {
     _rtp_pool.setSize(size);
 }
 
-int RtpReceiver::getJitterSize(int track_index){
+int RtpReceiver::getJitterSize(int track_index) const{
     return _rtp_sortor[track_index].getJitterSize();
 }
 
-int RtpReceiver::getCycleCount(int track_index){
+int RtpReceiver::getCycleCount(int track_index) const{
     return _rtp_sortor[track_index].getCycleCount();
 }
 
+uint32_t RtpReceiver::getSSRC(int track_index) const{
+    return _ssrc[track_index];
+}
 
 }//namespace mediakit
