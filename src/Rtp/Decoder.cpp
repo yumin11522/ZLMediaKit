@@ -215,14 +215,18 @@ void DecoderImp::onDecode(int stream,int codecid,int flags,int64_t pts,int64_t d
         }
 
         default:
-            if(codecid != 0){
-                WarnL<< "unsupported codec type:" << getCodecName(codecid) << " " << (int)codecid;
+            if (codecid != 0) {
+                if (_last_unsported_print.elapsedTime() / 1000 > 5) {
+                    _last_unsported_print.resetTime();
+                    WarnL << "unsupported codec type:" << getCodecName(codecid) << " " << (int) codecid;
+                }
             }
             break;
     }
 }
 #else
 void DecoderImp::onDecode(int stream,int codecid,int flags,int64_t pts,int64_t dts,const void *data,int bytes) {}
+void DecoderImp::onStream(int stream,int codecid,const void *extra,int bytes,int finish) {}
 #endif
 
 void DecoderImp::onTrack(const Track::Ptr &track) {

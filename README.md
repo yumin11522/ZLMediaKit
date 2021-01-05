@@ -33,7 +33,7 @@
 
 ## 功能清单
 ### 功能一览
-<img width="800" alt="图片" src="https://user-images.githubusercontent.com/11495632/93857284-f15b5f00-fcec-11ea-894d-83eb656dc235.png">
+<img width="800" alt="图片" src="https://user-images.githubusercontent.com/11495632/102689561-09824200-423a-11eb-9cf9-b39d1378ef68.png">
 
 - RTSP[S]
   - RTSP[S] 服务器，支持RTMP/MP4/HLS转RTSP[S],支持亚马逊echo show这样的设备
@@ -140,7 +140,7 @@ bash build_docker_images.sh
     
  - 流媒体管理平台
    - [功能强大的流媒体控制管理接口平台,支持GB28181](https://github.com/chatop2020/StreamNode)
-   - [GB28181-2016网络视频平台](https://github.com/648540858/wvp-GB28181)
+   - [GB28181-2016网络视频平台](https://github.com/648540858/wvp-GB28181-pro)
    - [node-js版本的GB28181平台](https://gitee.com/hfwudao/GB28181_Node_Http)
    - [Go实现的海康ehome服务器](https://github.com/tsingeye/FreeEhome)
 
@@ -209,6 +209,19 @@ bash build_docker_images.sh
 [big panda](<2381267071@qq.com>)
 [tanningzhong](https://github.com/tanningzhong)
 [hctym1995](https://github.com/hctym1995)
+[hewenyuan](https://gitee.com/kingyuanyuan)
+[sunhui](<sunhui200475@163.com>)
+[mirs](fangpengcheng@bilibili.com>)
+[Kevin Cheng](kevin__cheng@outlook.com>)
+[Liu Jiang](root@oopy.org>)
+[along](alongl@users.noreply.github.com>)
+[qingci](xpy66swsry@gmail.com>)
+[lyg1949](zh.ghlong@qq.com>)
+[zhlong](zh.ghlong@qq.com>)
+[Luke](automan@easydarwin.org>)
+[大裤衩](3503207480@qq.com>)
+[droid.chow](droid.chow@gmail.com>)
+[陈晓林](https://github.com/musicwood)
 
 ## 使用案例
 

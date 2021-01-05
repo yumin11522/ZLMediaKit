@@ -205,6 +205,12 @@
 							"value": null,
 							"description": "筛选应用名，例如 live",
 							"disabled": true
+						},
+						{
+							"key": "stream",
+							"value": null,
+							"description": "筛选流id，例如 test",
+							"disabled": true
 						}
 					]
 				}
@@ -428,7 +434,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{ZLMediaKit_URL}}/index/api/addStreamProxy?secret={{ZLMediaKit_secret}}&vhost={{defaultVhost}}&app=live&stream=test&url=rtmp://live.hkstv.hk.lxdns.com/live/hks2&enable_rtsp=1&enable_rtmp=1",
+					"raw": "{{ZLMediaKit_URL}}/index/api/addStreamProxy?secret={{ZLMediaKit_secret}}&vhost={{defaultVhost}}&app=live&stream=test&url=rtmp://live.hkstv.hk.lxdns.com/live/hks2",
 					"host": [
 						"{{ZLMediaKit_URL}}"
 					],
@@ -523,7 +529,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{ZLMediaKit_URL}}/index/api/addFFmpegSource?secret={{ZLMediaKit_secret}}&src_url=http://live.hkstv.hk.lxdns.com/live/hks2/playlist.m3u8&dst_url=rtmp://10.8.9.115:8554/live/hks2&timeout_ms=10000",
+					"raw": "{{ZLMediaKit_URL}}/index/api/addFFmpegSource?secret={{ZLMediaKit_secret}}&src_url=http://hefeng.live.tempsource.cjyun.org/videotmp/s10100-hftv.m3u8&dst_url=rtmp://127.0.0.1/live/hks2&timeout_ms=10000&enable_hls=0&enable_mp4=0",
 					"host": [
 						"{{ZLMediaKit_URL}}"
 					],
@@ -540,7 +546,7 @@
 						},
 						{
 							"key": "src_url",
-							"value": "http://live.hkstv.hk.lxdns.com/live/hks2/playlist.m3u8",
+							"value": "http://hefeng.live.tempsource.cjyun.org/videotmp/s10100-hftv.m3u8",
 							"description": "FFmpeg拉流地址,支持任意协议或格式(只要FFmpeg支持即可)"
 						},
 						{
@@ -552,6 +558,16 @@
 							"key": "timeout_ms",
 							"value": "10000",
 							"description": "FFmpeg推流成功超时时间,单位毫秒"
+						},
+						{
+							"key": "enable_hls",
+							"value": "0",
+							"description": "是否开启hls录制"
+						},
+						{
+							"key": "enable_mp4",
+							"value": "0",
+							"description": "是否开启mp4录制"
 						}
 					]
 				}
@@ -1014,6 +1030,68 @@
 			"response": []
 		},
 		{
+			"name": "暂停RTP超时检查(pauseRtpCheck)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{ZLMediaKit_URL}}/index/api/pauseRtpCheck?secret={{ZLMediaKit_secret}}&stream_id=test",
+					"host": [
+						"{{ZLMediaKit_URL}}"
+					],
+					"path": [
+						"index",
+						"api",
+						"pauseRtpCheck"
+					],
+					"query": [
+						{
+							"key": "secret",
+							"value": "{{ZLMediaKit_secret}}",
+							"description": "api操作密钥(配置文件配置)，如果操作ip是127.0.0.1，则不需要此参数"
+						},
+						{
+							"key": "stream_id",
+							"value": "test",
+							"description": "该端口绑定的流id"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "恢复RTP超时检查(resumeRtpCheck)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{ZLMediaKit_URL}}/index/api/resumeRtpCheck?secret={{ZLMediaKit_secret}}&stream_id=test",
+					"host": [
+						"{{ZLMediaKit_URL}}"
+					],
+					"path": [
+						"index",
+						"api",
+						"resumeRtpCheck"
+					],
+					"query": [
+						{
+							"key": "secret",
+							"value": "{{ZLMediaKit_secret}}",
+							"description": "api操作密钥(配置文件配置)，如果操作ip是127.0.0.1，则不需要此参数"
+						},
+						{
+							"key": "stream_id",
+							"value": "test",
+							"description": "该端口绑定的流id"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "获取RTP服务器列表(listRtpServer)",
 			"request": {
 				"method": "GET",
@@ -1078,7 +1156,7 @@
 						{
 							"key": "ssrc",
 							"value": "1",
-							"description": "rtp的ssrc"
+							"description": "rtp推流的ssrc，ssrc不同时，可以推流到多个上级服务器"
 						},
 						{
 							"key": "dst_url",
@@ -1094,6 +1172,12 @@
 							"key": "is_udp",
 							"value": "0",
 							"description": "是否为udp模式,否则为tcp模式"
+						},
+						{
+							"key": "src_port",
+							"value": "0",
+							"description": "指定tcp/udp客户端使用的本地端口，0时为随机端口，该参数非必选参数，不传时为随机端口。",
+							"disabled": true
 						}
 					]
 				}
@@ -1135,6 +1219,12 @@
 							"key": "stream",
 							"value": "obs",
 							"description": "流id，例如 obs"
+						},
+						{
+							"key": "ssrc",
+							"value": "",
+							"description": "根据ssrc关停某路rtp推流，不传时关闭所有推流",
+							"disabled": true
 						}
 					]
 				}
