@@ -50,8 +50,8 @@ bool CommonRtpDecoder::inputRtp(const RtpPacket::Ptr &rtp, bool){
     } else if (_last_seq != 0 && (uint16_t)(_last_seq + 1) != rtp->sequence) {
         //时间戳未发生变化，但是seq却不连续，说明中间rtp丢包了，那么整帧应该废弃
         WarnL << "rtp丢包:" << _last_seq << " -> " << rtp->sequence;
-        _drop_flag = true;
-        _frame->_buffer.clear();
+        //_drop_flag = true;
+        //_frame->_buffer.clear();
     }
 
     if (!_drop_flag) {
