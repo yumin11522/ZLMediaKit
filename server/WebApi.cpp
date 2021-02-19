@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -187,7 +187,7 @@ static inline void addHttpListener(){
                                                 const HttpBody::Ptr &body) {
 
                 //body默认为空
-                int64_t size = 0;
+                ssize_t size = 0;
                 if (body && body->remainSize()) {
                     //有body，获取body大小
                     size = body->remainSize();
@@ -572,7 +572,7 @@ void installWebApi() {
         CHECK_SECRET();
         uint16_t local_port = allArgs["local_port"].as<uint16_t>();
         string &peer_ip = allArgs["peer_ip"];
-        uint64_t count_hit = 0;
+        size_t count_hit = 0;
 
         list<TcpSession::Ptr> session_list;
         SessionMap::Instance().for_each_session([&](const string &id,const TcpSession::Ptr &session){
@@ -662,7 +662,8 @@ void installWebApi() {
         val["data"]["flag"] = s_proxyMap.erase(allArgs["key"]) == 1;
     });
 
-    static auto addFFmpegSource = [](const string &src_url,
+    static auto addFFmpegSource = [](const string &ffmpeg_cmd_key,
+                                     const string &src_url,
                                      const string &dst_url,
                                      int timeout_ms,
                                      bool enable_hls,
@@ -683,8 +684,8 @@ void installWebApi() {
             lock_guard<decltype(s_ffmpegMapMtx)> lck(s_ffmpegMapMtx);
             s_ffmpegMap.erase(key);
         });
-        ffmpeg->setupRecord(enable_hls, enable_mp4);
-        ffmpeg->play(src_url, dst_url, timeout_ms, [cb, key](const SockException &ex) {
+        ffmpeg->setupRecordFlag(enable_hls, enable_mp4);
+        ffmpeg->play(ffmpeg_cmd_key, src_url, dst_url, timeout_ms, [cb, key](const SockException &ex) {
             if (ex) {
                 lock_guard<decltype(s_ffmpegMapMtx)> lck(s_ffmpegMapMtx);
                 s_ffmpegMap.erase(key);
@@ -704,7 +705,7 @@ void installWebApi() {
         auto enable_hls = allArgs["enable_hls"].as<int>();
         auto enable_mp4 = allArgs["enable_mp4"].as<int>();
 
-        addFFmpegSource(src_url, dst_url, timeout_ms, enable_hls, enable_mp4,
+        addFFmpegSource(allArgs["ffmpeg_cmd_key"], src_url, dst_url, timeout_ms, enable_hls, enable_mp4,
                         [invoker, val, headerOut](const SockException &ex, const string &key) {
             if (ex) {
                 const_cast<Value &>(val)["code"] = API::OtherFailed;
@@ -923,7 +924,7 @@ void installWebApi() {
         Json::Value paths(arrayValue);
         //这是筛选日期，获取文件夹列表
         File::scanDir(record_path, [&](const string &path, bool isDir) {
-            int pos = path.rfind('/');
+            auto pos = path.rfind('/');
             if (pos != string::npos) {
                 string relative_path = path.substr(pos + 1);
                 if (search_mp4) {
@@ -1025,6 +1026,28 @@ void installWebApi() {
         });
     });
 
+    api_regist("/index/api/getStatistic",[](API_ARGS_MAP){
+        CHECK_SECRET();
+        val["data"]["MediaSource"] = (Json::UInt64)(ObjectStatistic<MediaSource>::count());
+        val["data"]["MultiMediaSourceMuxer"] = (Json::UInt64)(ObjectStatistic<MultiMediaSourceMuxer>::count());
+
+        val["data"]["TcpServer"] = (Json::UInt64)(ObjectStatistic<TcpServer>::count());
+        val["data"]["TcpSession"] = (Json::UInt64)(ObjectStatistic<TcpSession>::count());
+        val["data"]["TcpClient"] = (Json::UInt64)(ObjectStatistic<TcpClient>::count());
+        val["data"]["Socket"] = (Json::UInt64)(ObjectStatistic<Socket>::count());
+
+        val["data"]["FrameImp"] = (Json::UInt64)(ObjectStatistic<FrameImp>::count());
+        val["data"]["Frame"] = (Json::UInt64)(ObjectStatistic<Frame>::count());
+
+        val["data"]["Buffer"] = (Json::UInt64)(ObjectStatistic<Buffer>::count());
+        val["data"]["BufferRaw"] = (Json::UInt64)(ObjectStatistic<BufferRaw>::count());
+        val["data"]["BufferLikeString"] = (Json::UInt64)(ObjectStatistic<BufferLikeString>::count());
+        val["data"]["BufferList"] = (Json::UInt64)(ObjectStatistic<BufferList>::count());
+
+        val["data"]["RtpPacket"] = (Json::UInt64)(ObjectStatistic<RtpPacket>::count());
+        val["data"]["RtmpPacket"] = (Json::UInt64)(ObjectStatistic<RtmpPacket>::count());
+    });
+
     ////////////以下是注册的Hook API////////////
     api_regist("/index/hook/on_publish",[](API_ARGS_MAP){
         //开始推流事件
@@ -1080,7 +1103,7 @@ void installWebApi() {
                 << allArgs["stream"] << "?vhost="
                 << allArgs["vhost"];
 
-        addFFmpegSource("http://hls-ott-zhibo.wasu.tv/live/272/index.m3u8",/** ffmpeg拉流支持任意编码格式任意协议 **/
+        addFFmpegSource("", "http://hls-ott-zhibo.wasu.tv/live/272/index.m3u8",/** ffmpeg拉流支持任意编码格式任意协议 **/
                         dst_url,
                         (1000 * timeout_sec) - 500,
                         false,

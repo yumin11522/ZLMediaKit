@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -30,7 +30,7 @@ bool loadIniConfig(const char *ini_path){
         mINI::Instance().parseFile(ini);
         NoticeCenter::Instance().emitEvent(Broadcast::kBroadcastReloadConfig);
         return true;
-    }catch (std::exception &ex) {
+    }catch (std::exception &) {
         InfoL << "dump ini file to:" << ini;
         mINI::Instance().dumpFile(ini);
         return false;
@@ -194,15 +194,12 @@ const string kAudioMtuSize = RTP_FIELD"audioMtuSize";
 const string kMaxRtpCount = RTP_FIELD"maxRtpCount";
 //如果RTP序列正确次数累计达到该数字就启动清空排序缓存
 const string kClearCount = RTP_FIELD"clearCount";
-//最大RTP时间为13个小时，每13小时回环一次
-const string kCycleMS = RTP_FIELD"cycleMS";
 
 onceToken token([](){
     mINI::Instance()[kVideoMtuSize] = 1400;
     mINI::Instance()[kAudioMtuSize] = 600;
     mINI::Instance()[kMaxRtpCount] = 50;
     mINI::Instance()[kClearCount] = 10;
-    mINI::Instance()[kCycleMS] = 13*60*60*1000;
 },nullptr);
 } //namespace Rtsp
 
@@ -284,14 +281,11 @@ namespace RtpProxy {
 #define RTP_PROXY_FIELD "rtp_proxy."
 //rtp调试数据保存目录
 const string kDumpDir = RTP_PROXY_FIELD"dumpDir";
-//是否限制udp数据来源ip和端口
-const string kCheckSource = RTP_PROXY_FIELD"checkSource";
 //rtp接收超时时间
 const string kTimeoutSec = RTP_PROXY_FIELD"timeoutSec";
 
 onceToken token([](){
     mINI::Instance()[kDumpDir] = "";
-    mINI::Instance()[kCheckSource] = 1;
     mINI::Instance()[kTimeoutSec] = 15;
 },nullptr);
 } //namespace RtpProxy

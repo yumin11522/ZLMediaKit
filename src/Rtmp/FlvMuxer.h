@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -37,6 +37,7 @@ private:
     void onWriteRtmp(const RtmpPacket::Ptr &pkt, bool flush);
     void onWriteFlvTag(const RtmpPacket::Ptr &pkt, uint32_t time_stamp, bool flush);
     void onWriteFlvTag(uint8_t type, const Buffer::Ptr &buffer, uint32_t time_stamp, bool flush);
+    BufferRaw::Ptr obtainBuffer(const void *data, size_t len);
 
 private:
     //时间戳修整器

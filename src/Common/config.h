@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -251,8 +251,6 @@ extern const string kAudioMtuSize;
 extern const string kMaxRtpCount;
 //如果RTP序列正确次数累计达到该数字就启动清空排序缓存
 extern const string kClearCount;
-//最大RTP时间为13个小时，每13小时回环一次
-extern const string kCycleMS;
 } //namespace Rtsp
 
 ////////////组播配置///////////
@@ -303,8 +301,6 @@ extern const string kBroadcastRecordTs;
 namespace RtpProxy {
 //rtp调试数据保存目录,置空则不生成
 extern const string kDumpDir;
-//是否限制udp数据来源ip和端口
-extern const string kCheckSource;
 //rtp接收超时时间
 extern const string kTimeoutSec;
 } //namespace RtpProxy

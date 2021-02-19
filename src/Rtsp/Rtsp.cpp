@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -121,7 +121,7 @@ string SdpTrack::toString() const {
         default:
             break;
     }
-    return _printer;
+    return std::move(_printer);
 }
 
 static TrackType toTrackType(const string &str) {
@@ -215,8 +215,8 @@ void SdpParser::load(const string &sdp) {
                 if (strcmp(start, "now") == 0) {
                     strcpy(start, "0");
                 }
-                track._start = atof(start);
-                track._end = atof(end);
+                track._start = (float)atof(start);
+                track._end = (float)atof(end);
                 track._duration = track._end - track._start;
             }
         }
@@ -414,4 +414,140 @@ string printSSRC(uint32_t ui32Ssrc) {
     return tmp;
 }
 
+Buffer::Ptr makeRtpOverTcpPrefix(uint16_t size, uint8_t interleaved){
+    auto rtp_tcp = BufferRaw::create();
+    rtp_tcp->setCapacity(RtpPacket::kRtpTcpHeaderSize);
+    rtp_tcp->setSize(RtpPacket::kRtpTcpHeaderSize);
+    auto ptr = rtp_tcp->data();
+    ptr[0] = '$';
+    ptr[1] = interleaved;
+    ptr[2] = (size >> 8) & 0xFF;
+    ptr[3] = size & 0xFF;
+    return rtp_tcp;
+}
+
+#define AV_RB16(x)                           \
+    ((((const uint8_t*)(x))[0] << 8) |          \
+      ((const uint8_t*)(x))[1])
+
+size_t RtpHeader::getCsrcSize() const {
+    //每个csrc占用4字节
+    return csrc << 2;
+}
+
+uint8_t *RtpHeader::getCsrcData() {
+    if (!csrc) {
+        return nullptr;
+    }
+    return &payload;
+}
+
+size_t RtpHeader::getExtSize() const {
+    //rtp有ext
+    if (!ext) {
+        return 0;
+    }
+    auto ext_ptr = &payload + getCsrcSize();
+    uint16_t reserved = AV_RB16(ext_ptr);
+    //每个ext占用4字节
+    return AV_RB16(ext_ptr + 2) << 2;
+}
+
+uint8_t *RtpHeader::getExtData() {
+    if (!ext) {
+        return nullptr;
+    }
+    auto ext_ptr = &payload + getCsrcSize();
+    //多出的4个字节分别为reserved、ext_len
+    return ext_ptr + 4 + getExtSize();
+}
+
+size_t RtpHeader::getPayloadOffset() const {
+    //有ext时，还需要忽略reserved、ext_len 4个字节
+    return getCsrcSize() + (ext ? (4 + getExtSize()) : 0);
+}
+
+uint8_t *RtpHeader::getPayloadData() {
+    return &payload + getPayloadOffset();
+}
+
+size_t RtpHeader::getPaddingSize(size_t rtp_size) const {
+    if (!padding) {
+        return 0;
+    }
+    auto end = (uint8_t *) this + rtp_size - 1;
+    return *end;
+}
+
+size_t RtpHeader::getPayloadSize(size_t rtp_size) const{
+    auto invalid_size = getPayloadOffset() + getPaddingSize(rtp_size);
+    if (invalid_size + RtpPacket::kRtpHeaderSize >= rtp_size) {
+        return 0;
+    }
+    return rtp_size - invalid_size - RtpPacket::kRtpHeaderSize;
+}
+
+string RtpHeader::dumpString(size_t rtp_size) const{
+    _StrPrinter printer;
+    printer << "version:" << (int)version << "\r\n";
+    printer << "padding:" << getPaddingSize(rtp_size) << "\r\n";
+    printer << "ext:" << getExtSize() << "\r\n";
+    printer << "csrc:" << getCsrcSize() << "\r\n";
+    printer << "mark:" << (int)mark << "\r\n";
+    printer << "pt:" << (int)pt << "\r\n";
+    printer << "seq:" << ntohs(seq) << "\r\n";
+    printer << "stamp:" << ntohl(stamp) << "\r\n";
+    printer << "ssrc:" << ntohl(ssrc) << "\r\n";
+    printer << "rtp size:" << rtp_size << "\r\n";
+    printer << "payload offset:" << getPayloadOffset() << "\r\n";
+    printer << "payload size:" << getPayloadSize(rtp_size) << "\r\n";
+    return std::move(printer);
+}
+
+///////////////////////////////////////////////////////////////////////
+
+RtpHeader* RtpPacket::getHeader(){
+    //需除去rtcp over tcp 4个字节长度
+    return (RtpHeader*)(data() + RtpPacket::kRtpTcpHeaderSize);
+}
+
+uint16_t RtpPacket::getSeq(){
+    return ntohs(getHeader()->seq);
+}
+
+uint32_t RtpPacket::getStampMS(){
+    return ntohl(getHeader()->stamp) * uint64_t(1000) / sample_rate;
+}
+
+uint32_t RtpPacket::getSSRC(){
+    return ntohl(getHeader()->ssrc);
+}
+
+uint8_t* RtpPacket::getPayload(){
+    return getHeader()->getPayloadData();
+}
+
+size_t RtpPacket::getPayloadSize(){
+    //需除去rtcp over tcp 4个字节长度
+    return getHeader()->getPayloadSize(size() - kRtpTcpHeaderSize);
+}
+
+RtpPacket::Ptr RtpPacket::create(){
+#if 0
+    static ResourcePool<RtpPacket> packet_pool;
+    static onceToken token([]() {
+        packet_pool.setSize(1024);
+    });
+    auto ret = packet_pool.obtain();
+    ret->setSize(0);
+    return ret;
+#else
+    return Ptr(new RtpPacket);
+#endif
+}
+
 }//namespace mediakit
+
+namespace toolkit {
+    StatisticImp(mediakit::RtpPacket);
+}

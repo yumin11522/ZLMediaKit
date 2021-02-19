@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -36,7 +36,7 @@ void RtmpSession::onError(const SockException& err) {
     //流量统计事件广播
     GET_CONFIG(uint32_t,iFlowThreshold,General::kFlowThreshold);
 
-    if(_total_bytes > iFlowThreshold * 1024){
+    if(_total_bytes >= iFlowThreshold * 1024){
         NoticeCenter::Instance().emitEvent(Broadcast::kBroadcastFlowReport, _media_info, _total_bytes, duration, isPlayer, static_cast<SockInfo &>(*this));
     }
 }
@@ -87,6 +87,12 @@ void RtmpSession::onCmd_connect(AMFDecoder &dec) {
     if(_tc_url.empty()){
         //defaultVhost:默认vhost
         _tc_url = string(RTMP_SCHEMA) + "://" + DEFAULT_VHOST + "/" + _media_info._app;
+    } else {
+        auto pos = _tc_url.rfind('?');
+        if (pos != string::npos) {
+            //tc_url 中可能包含?以及参数，参见issue: #692
+            _tc_url = _tc_url.substr(0, pos);
+        }
     }
     bool ok = true; //(app == APP_NAME);
     AMFValue version(AMF_OBJECT);
@@ -277,8 +283,8 @@ void RtmpSession::sendPlayResponse(const string &err,const RtmpMediaSource::Ptr 
         if(strongSelf->_paused){
             return;
         }
-        int i = 0;
-        int size = pkt->size();
+        size_t i = 0;
+        auto size = pkt->size();
         strongSelf->setSendFlushFlag(false);
         pkt->for_each([&](const RtmpPacket::Ptr &rtmp){
             if(++i == size){
@@ -452,7 +458,8 @@ void RtmpSession::onProcessCmd(AMFDecoder &dec) {
     (this->*fun)(dec);
 }
 
-void RtmpSession::onRtmpChunk(RtmpPacket &chunk_data) {
+void RtmpSession::onRtmpChunk(RtmpPacket::Ptr packet) {
+    auto &chunk_data = *packet;
     switch (chunk_data.type_id) {
     case MSG_CMD:
     case MSG_CMD3: {
@@ -482,14 +489,14 @@ void RtmpSession::onRtmpChunk(RtmpPacket &chunk_data) {
         if (rtmp_modify_stamp) {
             int64_t dts_out;
             _stamp[chunk_data.type_id % 2].revise(chunk_data.time_stamp, chunk_data.time_stamp, dts_out, dts_out, true);
-            chunk_data.time_stamp = dts_out;
+            chunk_data.time_stamp = (uint32_t)dts_out;
         }
 
         if (!_set_meta_data && !chunk_data.isCfgFrame()) {
             _set_meta_data = true;
             _publisher_src->setMetaData(TitleMeta().getMetadata());
         }
-        _publisher_src->onWrite(std::make_shared<RtmpPacket>(std::move(chunk_data)));
+        _publisher_src->onWrite(std::move(packet));
         break;
     }
 
@@ -508,7 +515,7 @@ void RtmpSession::onCmd_seek(AMFDecoder &dec) {
     status.set("description", "Seeking.");
     sendReply("onStatus", nullptr, status);
 
-    auto milliSeconds = dec.load<AMFValue>().as_number();
+    auto milliSeconds = (uint32_t)(dec.load<AMFValue>().as_number());
     InfoP(this) << "rtmp seekTo(ms):" << milliSeconds;
     auto strong_src = _player_src.lock();
     if (strong_src) {
@@ -520,7 +527,7 @@ void RtmpSession::onSendMedia(const RtmpPacket::Ptr &pkt) {
     //rtmp播放器时间戳从零开始
     int64_t dts_out;
     _stamp[pkt->type_id % 2].revise(pkt->time_stamp, 0, dts_out, dts_out);
-    sendRtmp(pkt->type_id, pkt->stream_index, pkt, dts_out, pkt->chunk_id);
+    sendRtmp(pkt->type_id, pkt->stream_index, pkt, (uint32_t)dts_out, pkt->chunk_id);
 }
 
 

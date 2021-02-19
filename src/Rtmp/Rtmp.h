@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -128,39 +128,33 @@ public:
 
 class RtmpPacket : public Buffer{
 public:
-    typedef std::shared_ptr<RtmpPacket> Ptr;
+    friend class RtmpProtocol;
+    using Ptr = std::shared_ptr<RtmpPacket>;
+    bool is_abs_stamp;
     uint8_t type_id;
-    uint32_t body_size = 0;
-    uint32_t time_stamp = 0;
-    bool is_abs_stamp = false;
-    uint32_t ts_field = 0;
+    uint32_t time_stamp;
+    uint32_t ts_field;
     uint32_t stream_index;
     uint32_t chunk_id;
+    size_t body_size;
     BufferLikeString buffer;
 
 public:
+    static Ptr create();
+
     char *data() const override{
         return (char*)buffer.data();
     }
-    uint32_t size() const override {
+    size_t size() const override {
         return buffer.size();
     }
 
-public:
-    RtmpPacket() = default;
-    RtmpPacket(const RtmpPacket &that) = delete;
-    RtmpPacket &operator=(const RtmpPacket &that) = delete;
-    RtmpPacket &operator=(RtmpPacket &&that) = delete;
-
-    RtmpPacket(RtmpPacket &&that){
-        type_id = that.type_id;
-        body_size = that.body_size;
-        time_stamp = that.time_stamp;
-        is_abs_stamp = that.is_abs_stamp;
-        ts_field = that.ts_field;
-        stream_index = that.stream_index;
-        chunk_id = that.chunk_id;
-        buffer = std::move(that.buffer);
+    void clear(){
+        is_abs_stamp = false;
+        time_stamp = 0;
+        ts_field = 0;
+        body_size = 0;
+        buffer.clear();
     }
 
     bool isVideoKeyFrame() const {
@@ -214,6 +208,26 @@ public:
         const static int channel[] = { 1, 2 };
         return channel[flvStereoOrMono];
     }
+
+private:
+    friend class ResourcePool_l<RtmpPacket>;
+    RtmpPacket(){
+        clear();
+    }
+
+    RtmpPacket &operator=(const RtmpPacket &that) {
+        is_abs_stamp = that.is_abs_stamp;
+        stream_index = that.stream_index;
+        body_size = that.body_size;
+        type_id = that.type_id;
+        ts_field = that.ts_field;
+        time_stamp = that.time_stamp;
+        return *this;
+    }
+
+private:
+    //对象个数统计
+    ObjectStatistic<RtmpPacket> _statistic;
 };
 
 /**
@@ -242,7 +256,7 @@ public:
     typedef std::shared_ptr<TitleMeta> Ptr;
 
     TitleMeta(float dur_sec = 0,
-              uint64_t fileSize = 0,
+              size_t fileSize = 0,
               const map<string,string> &header = map<string,string>()){
         _metadata.set("duration", dur_sec);
         _metadata.set("fileSize", 0);

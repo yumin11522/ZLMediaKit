@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -21,7 +21,7 @@ using namespace toolkit;
 
 namespace mediakit {
 
-template<typename T, typename SEQ = uint16_t, uint32_t kMax = 256, uint32_t kMin = 10>
+template<typename T, typename SEQ = uint16_t, size_t kMax = 256, size_t kMin = 10>
 class PacketSortor {
 public:
     PacketSortor() = default;
@@ -44,14 +44,14 @@ public:
     /**
      * 获取排序缓存长度
      */
-    int getJitterSize() const{
+    size_t getJitterSize() const{
         return _rtp_sort_cache_map.size();
     }
 
     /**
      * 获取seq回环次数
      */
-    int getCycleCount() const{
+    size_t getCycleCount() const{
         return _seq_cycle_count;
     }
 
@@ -62,7 +62,7 @@ public:
      */
     void sortPacket(SEQ seq, T packet) {
         if (seq < _next_seq_out) {
-            if (_next_seq_out - seq < kMax) {
+            if (_next_seq_out < seq + kMax) {
                 //过滤seq回退包(回环包除外)
                 return;
             }
@@ -116,9 +116,11 @@ private:
     }
 
     void popIterator(typename map<SEQ, T>::iterator it) {
-        _cb(it->first, it->second);
-        _next_seq_out = it->first + 1;
+        auto seq = it->first;
+        auto data = std::move(it->second);
         _rtp_sort_cache_map.erase(it);
+        _next_seq_out = seq + 1;
+        _cb(seq, data);
     }
 
     void tryPopPacket() {
@@ -149,9 +151,9 @@ private:
     //下次应该输出的SEQ
     SEQ _next_seq_out = 0;
     //seq回环次数计数
-    uint32_t _seq_cycle_count = 0;
+    size_t _seq_cycle_count = 0;
     //排序缓存长度
-    uint32_t _max_sort_size = kMin;
+    size_t _max_sort_size = kMin;
     //rtp排序缓存，根据seq排序
     map<SEQ, T> _rtp_sort_cache_map;
     //回调
@@ -166,36 +168,38 @@ public:
 protected:
     /**
      * 输入数据指针生成并排序rtp包
-     * @param track_index track下标索引
+     * @param index track下标索引
      * @param type track类型
      * @param samplerate rtp时间戳基准时钟，视频为90000，音频为采样率
-     * @param rtp_raw_ptr rtp数据指针
-     * @param rtp_raw_len rtp数据指针长度
+     * @param ptr rtp数据指针
+     * @param len rtp数据指针长度
      * @return 解析成功返回true
      */
-    bool handleOneRtp(int track_index, TrackType type, int samplerate, unsigned char *rtp_raw_ptr, unsigned int rtp_raw_len);
+    bool handleOneRtp(int index, TrackType type, int samplerate, uint8_t *ptr, size_t len);
 
     /**
      * rtp数据包排序后输出
      * @param rtp rtp数据包
      * @param track_index track索引
      */
-    virtual void onRtpSorted(const RtpPacket::Ptr &rtp, int track_index) {}
+    virtual void onRtpSorted(RtpPacket::Ptr rtp, int track_index) {}
+
+    /**
+     * 解析出rtp但还未排序
+     * @param rtp rtp数据包
+     * @param track_index track索引
+     */
+    virtual void onBeforeRtpSorted(const RtpPacket::Ptr &rtp, int track_index) {}
 
     void clear();
-    void setPoolSize(int size);
-    int getJitterSize(int track_index) const;
-    int getCycleCount(int track_index) const;
+    size_t getJitterSize(int track_index) const;
+    size_t getCycleCount(int track_index) const;
     uint32_t getSSRC(int track_index) const;
 
 private:
     uint32_t _ssrc[2] = {0, 0};
-    //ssrc不匹配计数
-    uint32_t _ssrc_err_count[2] = {0, 0};
     //rtp排序缓存，根据seq排序
     PacketSortor<RtpPacket::Ptr> _rtp_sortor[2];
-    //rtp循环池
-    RtspMediaSource::PoolType _rtp_pool;
 };
 
 }//namespace mediakit

@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -14,8 +14,6 @@
 #if defined(ENABLE_RTPPROXY)
 #include "ProcessInterface.h"
 #include "Common/MultiMediaSourceMuxer.h"
-
-using namespace mediakit;
 
 namespace mediakit {
 
@@ -36,7 +34,7 @@ public:
      * @param dts_out 解析出最新的dts
      * @return 是否解析成功
      */
-    bool inputRtp(bool is_udp, const Socket::Ptr &sock, const char *data, int len, const struct sockaddr *addr , uint32_t *dts_out = nullptr);
+    bool inputRtp(bool is_udp, const Socket::Ptr &sock, const char *data, size_t len, const struct sockaddr *addr , uint32_t *dts_out = nullptr);
 
     /**
      * 是否超时，用于超时移除对象
@@ -65,7 +63,7 @@ public:
     uint16_t get_peer_port() override;
     string getIdentifier() const override;
 
-    int totalReaderCount();
+    int getTotalReaderCount();
     void setListener(const std::weak_ptr<MediaSourceEvent> &listener);
 
 protected:
@@ -85,7 +83,7 @@ private:
 private:
     uint32_t _dts = 0;
     uint64_t _total_bytes = 0;
-    struct sockaddr *_addr = nullptr;
+    struct sockaddr _addr{0};
     Socket::Ptr _sock;
     MediaInfo _media_info;
     Ticker _last_frame_time;
@@ -94,7 +92,8 @@ private:
     std::shared_ptr<FILE> _save_file_video;
     ProcessInterface::Ptr _process;
     MultiMediaSourceMuxer::Ptr _muxer;
-    std::atomic_bool _stop_rtp_check;
+    atomic_bool _stop_rtp_check{false};
+    atomic_flag _busy_flag{false};
 };
 
 }//namespace mediakit

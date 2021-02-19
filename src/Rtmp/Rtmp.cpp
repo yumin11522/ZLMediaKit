@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2016 The ZLMediaKit project authors. All Rights Reserved.
  *
- * This file is part of ZLMediaKit(https://github.com/xiongziliang/ZLMediaKit).
+ * This file is part of ZLMediaKit(https://github.com/xia-chu/ZLMediaKit).
  *
  * Use of this source code is governed by MIT license that can be found in the
  * LICENSE file in the root of the source tree. All contributing project authors
@@ -131,4 +131,23 @@ void Metadata::addTrack(AMFValue &metadata, const Track::Ptr &track) {
         metadata.set(key, value);
     });
 }
+
+RtmpPacket::Ptr RtmpPacket::create(){
+#if 0
+    static ResourcePool<RtmpPacket> packet_pool;
+    static onceToken token([]() {
+        packet_pool.setSize(1024);
+    });
+    auto ret = packet_pool.obtain();
+    ret->clear();
+    return ret;
+#else
+    return Ptr(new RtmpPacket);
+#endif
+}
+
 }//namespace mediakit
+
+namespace toolkit {
+    StatisticImp(mediakit::RtmpPacket);
+}
